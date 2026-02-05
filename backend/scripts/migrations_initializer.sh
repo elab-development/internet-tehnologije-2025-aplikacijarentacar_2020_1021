@@ -8,7 +8,8 @@ done
 echo "Starting migrations"
 alembic upgrade head
 
-echo "Inserting data..."
+echo "
+Inserting data..."
 python seed.py
 
 echo "Starting uvicorn server..."

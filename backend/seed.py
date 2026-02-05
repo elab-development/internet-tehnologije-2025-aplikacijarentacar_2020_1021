@@ -1,7 +1,9 @@
 import os
 from sqlalchemy.orm import Session
+
+from utils.auth import get_password_hash
 from database import SessionLocal, engine
-from models import Role, Base
+from models import Role, Base, User
 
 
 def seed_data():
@@ -20,6 +22,20 @@ def seed_data():
 
         db.commit()
         print("Initial seed successfully completed")
+
+        admin_role = db.query(Role).filter(Role.name == "admin").first()
+        admin_user = db.query(User).filter(User.email == "admin@carrental.com").first()
+        if not admin_user:
+            admin_user = User(
+                full_name="Admin",
+                email="admin@carrental.com",
+                password_hash=get_password_hash("admin123"),
+                role_id=admin_role.id,
+                is_active=True
+            )
+            db.add(admin_user)
+            db.commit()
+            print("Admin user successfully created: admin@admin.com / admin123")
     except Exception as e:
         print(f"An error occurred: {e}")
         db.rollback()

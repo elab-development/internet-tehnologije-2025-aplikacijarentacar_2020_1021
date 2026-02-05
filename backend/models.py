@@ -8,6 +8,7 @@ class Role(Base):
     __tablename__ = "roles"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True)
+    users = relationship("User", back_populates="role")
 
 
 class User(Base):
@@ -17,7 +18,9 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     password_hash = Column(String)
     role_id = Column(Integer, ForeignKey("roles.id"))
-
+    role = relationship("Role", back_populates="users")
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
     reservations = relationship("Reservation", back_populates="user")
     documents = relationship("Document", back_populates="user")
 
@@ -29,6 +32,7 @@ class Vehicle(Base):
     model = Column(String)
     price_per_day = Column(Numeric(10, 2))
     available = Column(Boolean, default=True)
+    reservations = relationship("Reservation", back_populates="vehicle")
 
 
 class Reservation(Base):
@@ -40,12 +44,15 @@ class Reservation(Base):
     end_date = Column(DateTime)
 
     user = relationship("User", back_populates="reservations")
+    vehicle = relationship("Vehicle", back_populates="reservations")
 
 
 class Document(Base):
     __tablename__ = "documents"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
+    document_type = Column(String)
     file_path = Column(String)
+    uploaded_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user = relationship("User", back_populates="documents")
