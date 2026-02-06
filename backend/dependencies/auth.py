@@ -1,9 +1,9 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from backend.database import get_db
-from backend.utils.auth import decode_access_token
-from backend.models import User
+from database import get_db
+from utils.auth import decode_access_token
+from models import User
 
 security = HTTPBearer()
 
@@ -46,7 +46,7 @@ def get_current_user(
 
 
 def require_role(*allowed_roles: str):
-    """Dependency za proveru uloge"""
+    """Dependency for role check"""
 
     def role_checker(current_user: User = Depends(get_current_user)) -> User:
         # Učitaj role iz baze

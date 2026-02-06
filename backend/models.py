@@ -21,8 +21,10 @@ class User(Base):
     role = relationship("Role", back_populates="users")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
     reservations = relationship("Reservation", back_populates="user")
     documents = relationship("Document", back_populates="user")
+    reviews = relationship("Review", back_populates="user")
 
 
 class Vehicle(Base):
@@ -32,7 +34,9 @@ class Vehicle(Base):
     model = Column(String)
     price_per_day = Column(Numeric(10, 2))
     available = Column(Boolean, default=True)
+
     reservations = relationship("Reservation", back_populates="vehicle")
+    reviews = relationship("Review", back_populates="vehicle")
 
 
 class Reservation(Base):
@@ -56,3 +60,15 @@ class Document(Base):
     uploaded_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user = relationship("User", back_populates="documents")
+
+
+class Review(Base):
+    __tablename__ = "reviews"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    vehicle_id = Column(Integer, ForeignKey("vehicles.id"))
+    rating = Column(Integer)
+    comment = Column(String(500))
+
+    user = relationship("User", back_populates="reviews")
+    vehicle = relationship("Vehicle", back_populates="reviews")
