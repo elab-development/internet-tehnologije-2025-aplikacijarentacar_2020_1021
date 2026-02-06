@@ -1,5 +1,3 @@
-from datetime import datetime
-from typing import List
 from pydantic import BaseModel, field_validator
 from datetime import datetime
 from typing import List
@@ -41,6 +39,7 @@ class ReservationResponse(BaseModel):
 class SingleReservationResponse(BaseModel):
     status: str
     data: ReservationResponse
+
     class Config:
         from_attributes = True
 

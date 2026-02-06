@@ -9,10 +9,16 @@ router = APIRouter(prefix="/reservations", tags=["Reservations management"])
 
 
 @router.get("", response_model=ReservationListResponse)
-def get_all_reservations(db: Session = Depends(get_db), current_user: User = Depends(require_role("admin"))):
+def get_all_reservations(db: Session = Depends(get_db), current_user: User = Depends(require_role("admin", "manager", "user"))):
+
+    if current_user.role in ("admin", "manager"):
+        reservations = db.query(Reservation).all()
+    else:
+        reservations = db.query(Reservation).filter(Reservation.user_id == current_user.id).all()
+
     return {
         "status": "ok",
-        "data": db.query(Reservation).all()
+        "data": reservations
     }
 
 
