@@ -1,5 +1,7 @@
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
 
 from routers import auth, vehicle, reservations
 
@@ -25,3 +27,16 @@ app.include_router(reservations.router)
 @app.get("/")
 def healthcheck():
     return {"status": "ok"}
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    error_msg = exc.errors()[0].get("msg")
+
+    return JSONResponse(
+        status_code=400,
+        content={
+            "status": "error",
+            "message": error_msg
+        }
+    )

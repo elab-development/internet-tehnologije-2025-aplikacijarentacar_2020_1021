@@ -27,8 +27,8 @@ class ReservationResponse(BaseModel):
     id: int
     start_date: datetime
     end_date: datetime
-    #total_price: float
-    #status: str
+    price: float
+    status: str
     user: UserInReservation
     vehicle: VehicleInReservation
 
@@ -57,11 +57,22 @@ class ReservationCreate(BaseModel):
     start_date: datetime
     end_date: datetime
 
+    """
+    @:param
+    vehicle_id: int - id of a vehicle reservation supposed to be for
+    start_date: datetime - start date of reservation
+    end_date: datetime - end date of reservation
+    
+    Validates if start and end dates are in valid format (start date can't be before today's date, end date can't be before start)
+    """
+    @field_validator('start_date')
+    def start_date_must_be_future(cls, v):
+        if v.date() < datetime.now().date():
+            raise ValueError('Start date can not be in the past')
+        return v
+
     @field_validator('end_date')
-    @classmethod
-    def check_dates(cls, v: datetime, info):
+    def end_date_must_be_after_start(cls, v, info):
         if 'start_date' in info.data and v <= info.data['start_date']:
-            raise ValueError('Datum završetka mora biti nakon datuma početka')
-        if v < datetime.now():
-            raise ValueError('Ne možete rezervisati u prošlosti')
+            raise ValueError('End date has to be after the start date')
         return v

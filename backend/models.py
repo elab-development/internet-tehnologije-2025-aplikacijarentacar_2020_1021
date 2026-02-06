@@ -46,7 +46,11 @@ class Reservation(Base):
     vehicle_id = Column(Integer, ForeignKey("vehicles.id"))
     start_date = Column(DateTime)
     end_date = Column(DateTime)
-
+    status = Column(String)
+    price = Column(Numeric(10, 2))
+    total_days = Column(Integer)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
     user = relationship("User", back_populates="reservations")
     vehicle = relationship("Vehicle", back_populates="reservations")
 
