@@ -143,16 +143,17 @@ def update_reservation_status(
     reservation = db.query(Reservation).filter(Reservation.id == reservation_id).first()
     if not reservation:
         raise HTTPException(
-            status_code=404, detail=f"Reservation with id: {id} is not found"
+            status_code=404, detail=f"Reservation with id: {reservation_id} is not found"
         )
 
     if current_user.role.name != "admin" and reservation.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to perform actions on this reservation")
 
-    if current_user.role_name == "customer" and payload.status != "cancelled":
+    if current_user.role.name == "customer" and payload.status != "cancelled":
         raise HTTPException(status_code=403, detail="Not authorized to perform that status change")
 
     reservation.status = payload.status
+    reservation.updated_at = datetime.utcnow()
     db.add(reservation)
     db.commit()
     db.refresh(reservation)

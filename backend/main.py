@@ -3,7 +3,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
-from routers import auth, vehicle, reservations
+from routers import auth, vehicle, reservations, review
 
 app = FastAPI(
     title="Car Rental API",
@@ -22,6 +22,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(vehicle.router)
 app.include_router(reservations.router)
+app.include_router(review.router)
 
 
 @app.get("/")

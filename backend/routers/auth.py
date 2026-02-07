@@ -22,7 +22,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         )
 
     #Get customer role
-    customer_role = db.query(Role).filter(Role.name == "user").first()
+    customer_role = db.query(Role).filter(Role.name == "customer").first()
     if not customer_role:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
