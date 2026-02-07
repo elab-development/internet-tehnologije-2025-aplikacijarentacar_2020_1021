@@ -2,6 +2,14 @@ from pydantic import BaseModel, field_validator
 from datetime import datetime
 from typing import List
 from pydantic import BaseModel
+from enum import Enum
+
+
+class ReservationStatusEnum(str, Enum):
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
+    PAYMENT_PROCESSED = "payment_processed"
 
 
 class UserInReservation(BaseModel):
@@ -50,6 +58,10 @@ class ReservationListResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ReservationStatusUpdate(BaseModel):
+    status: ReservationStatusEnum
 
 
 class ReservationCreate(BaseModel):

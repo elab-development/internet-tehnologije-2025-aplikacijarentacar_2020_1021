@@ -6,7 +6,7 @@ from models import Role, Base, User
 def seed_data():
     db = SessionLocal()
     try:
-        roles = ["admin", "user", "manager"]
+        roles = ["admin", "customer", "manager"]
 
         for role_name in roles:
             exists = db.query(Role).filter(Role.name == role_name).first()

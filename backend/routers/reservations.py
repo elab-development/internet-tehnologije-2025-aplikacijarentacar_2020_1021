@@ -5,13 +5,13 @@ from dependencies.auth import require_role
 from sqlalchemy import exists
 from sqlalchemy.orm import Session
 from database import get_db
-from schema.reservations import ReservationListResponse, SingleReservationResponse, ReservationCreate
+from schema.reservations import ReservationListResponse, SingleReservationResponse, ReservationCreate, ReservationStatusUpdate
 
 router = APIRouter(prefix="/reservations", tags=["Reservations management"])
 
 
 @router.get("", response_model=ReservationListResponse)
-def get_all_reservations(db: Session = Depends(get_db), current_user: User = Depends(require_role("admin", "manager", "user"))):
+def get_all_reservations(db: Session = Depends(get_db), current_user: User = Depends(require_role("admin", "manager", "customer"))):
 
     if current_user.role in ("admin", "manager"):
         reservations = db.query(Reservation).all()
@@ -27,7 +27,7 @@ def get_all_reservations(db: Session = Depends(get_db), current_user: User = Dep
 @router.get("/{reservation_id}", response_model=SingleReservationResponse)
 def get_reservation_by_id(reservation_id: int,
                           db: Session = Depends(get_db),
-                          current_user: User = Depends(require_role("admin", "user"))):
+                          current_user: User = Depends(require_role("admin", "manager", "customer"))):
     reservation = db.query(Reservation).filter(Reservation.id == reservation_id).first()
     if not reservation:
         raise HTTPException(status_code=404, detail=f"There is no reservation with id: {reservation_id}")
@@ -92,7 +92,7 @@ def update_reservation(
     reservation_id: int,
     payload: ReservationCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("admin", "customer"))
+    current_user: User = Depends(require_role("admin", "manager", "customer"))
 ):
 
     reservation = db.query(Reservation).filter(Reservation.id == reservation_id).first()
@@ -130,6 +130,57 @@ def update_reservation(
     return {
         "status": "success",
         "data": reservation
+    }
+
+
+@router.put("/{reservation_id}/status")
+def update_reservation_status(
+        reservation_id: int,
+        payload: ReservationStatusUpdate,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(require_role("admin", "manager", "customer"))
+):
+    reservation = db.query(Reservation).filter(Reservation.id == reservation_id).first()
+    if not reservation:
+        raise HTTPException(
+            status_code=404, detail=f"Reservation with id: {id} is not found"
+        )
+
+    if current_user.role.name != "admin" and reservation.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to perform actions on this reservation")
+
+    if current_user.role_name == "customer" and payload.status != "cancelled":
+        raise HTTPException(status_code=403, detail="Not authorized to perform that status change")
+
+    reservation.status = payload.status
+    db.add(reservation)
+    db.commit()
+    db.refresh(reservation)
+
+    return {
+        "status": "success",
+        "message": "Successfully updated reservation status"
+    }
+
+
+@router.delete("/{reservation_id}")
+def delete_reservation(
+        reservation_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(require_role("admin"))
+):
+    reservation = db.query(Reservation).filter(Reservation.id == reservation_id).first()
+    if not reservation:
+        raise HTTPException(
+            status_code=404, detail=f"Reservation with id: {id} is not found"
+        )
+
+    db.delete(reservation)
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": f"Successfully deleted reservation with id: {reservation_id}"
     }
 
 
