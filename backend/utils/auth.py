@@ -5,7 +5,7 @@ from typing import Optional
 import os
 
 
-SECRET_KEY = os.getenv("SECRET_KEY", "qqqqqbbbbbbb")
+SECRET_KEY = os.getenv("SECRET_KEY", "xxx")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
