@@ -9,7 +9,8 @@ load_dotenv()
 
 """Load stripe key from env variable"""
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-fe_url = os.getenv("FRONTEND_URL")
+# Stripe redirects here after payment; use same origin as frontend (e.g. http://localhost:5173 for Vite)
+fe_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 
 class PaymentService:

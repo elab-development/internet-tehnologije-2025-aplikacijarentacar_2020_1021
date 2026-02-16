@@ -48,14 +48,13 @@ def update_status(
     user: User = Depends(require_role("admin"))
 ):
     vehicle = db.query(Vehicle).filter(Vehicle.id == id).first()
-    current_status = vehicle.status
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    current_status = vehicle.available
     vehicle.available = new_status
     db.commit()
     db.refresh(vehicle)
-    if not vehicle:
-        raise HTTPException(status_code=404, detail="Vehicle not found")
-
-    return {"message": f"Status successfully updated from {current_status} to {vehicle.status} for id: {id}"}
+    return {"message": f"Status successfully updated from {current_status} to {vehicle.available} for id: {id}"}
 
 
 @router.post("")
