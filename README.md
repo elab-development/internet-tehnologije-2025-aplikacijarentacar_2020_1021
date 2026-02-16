@@ -91,6 +91,22 @@ Once the build is complete, the services will be available at:
 └── .env        # Environment variable template
 ```
 
+## Database Migrations (Alembic)
+This project uses **Alembic** to handle database schema changes. Whenever you modify the SQLAlchemy models in the `backend/app/models/` directory, follow these steps to sync the database:
+
+### 1. Generate a Migration Script
+Run the following command to let Alembic detect the changes and create a new version file:
+```bash
+docker exec -it car_rental_backend alembic revision --autogenerate -m "Describe your changes here"
+```
+### 2. Apply Changes to the Database
+Execute the migration script to update the PostgreSQL schema to the latest version:
+```bash
+docker exec -it car_rental_backend alembic upgrade head
+```
+**Note:** 
+Ensure the backend container is running before executing these commands. You can verify the generated scripts in the backend/alembic/versions/ directory.
+
 ## Payment and Notification Flow
 1. Reservation: The user selects a vehicle and creates a booking.
 2. Payment Initiation: The backend generates a Stripe Checkout session and returns a secure URL.
