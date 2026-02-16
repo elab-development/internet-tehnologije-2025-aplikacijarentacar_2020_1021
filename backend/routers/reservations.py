@@ -39,7 +39,7 @@ def verify_payment(
     try:
         int_res_id = int(res_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"ID '{res_id}' nije broj!")
+        raise HTTPException(status_code=400, detail=f"ID '{res_id}' is not a number!")
     if session and session.payment_status == "paid":
         reservation = db.query(Reservation).filter(Reservation.id == int_res_id).first()
         if reservation:
