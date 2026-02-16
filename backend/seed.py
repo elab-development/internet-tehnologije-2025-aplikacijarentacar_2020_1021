@@ -20,8 +20,10 @@ def seed_data():
 
         admin_role = db.query(Role).filter(Role.name == "admin").first()
         manager_role = db.query(Role).filter(Role.name == "manager").first()
+        customer_role = db.query(Role).filter(Role.name == "customer").first()
         admin_user = db.query(User).filter(User.email == "admin@admin.com").first()
         manager_user = db.query(User).filter(User.email == "manager@manager.com").first()
+        customer_user = db.query(User).filter(User.email == "customer@customer.com").first()
         if not admin_user:
             admin_user = User(
                 full_name="Admin",
@@ -46,6 +48,18 @@ def seed_data():
             db.add(manager_user)
             db.commit()
             print("Manager user successfully created: manager@manager.com / manager123")
+        if not customer_user:
+            manager_user = User(
+                full_name="Customer",
+                email="customer@customer.com",
+                password_hash=get_password_hash("customer123"),
+                phone_number="+5555555555",
+                role_id=customer_role.id,
+                is_active=True
+            )
+            db.add(manager_user)
+            db.commit()
+            print("Customer user successfully created: customer@customer.com / customer123")
     except Exception as e:
         print(f"An error occurred: {e}")
         db.rollback()
