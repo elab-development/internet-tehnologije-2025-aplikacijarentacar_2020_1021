@@ -217,7 +217,13 @@ def pay_for_reservation(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("customer", "admin"))
 ):
-
+    """
+    The endpoint for reservation payment. It generates checkout url that will be used by FE to redirect users to stripe
+    :param reservation_id:
+    :param db:
+    :param current_user:
+    :return: checkout_url
+    """
     reservation = db.query(Reservation).filter(Reservation.id == reservation_id, Reservation.user_id == current_user.id).first()
     if not reservation:
         raise HTTPException(status_code=404, detail=f"Reservation with id: {reservation_id} is not found")
