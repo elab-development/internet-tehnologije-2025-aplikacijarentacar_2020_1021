@@ -5,10 +5,11 @@ from datetime import datetime
 
 class UserBase(BaseModel):
     email: EmailStr
-    full_name: str
+    phone_number: str
 
 
 class UserCreate(UserBase):
+    phone_number: str
     password: str
 
 
@@ -44,6 +45,7 @@ class UserResponseAdminPanel(BaseModel):
     id: int
     full_name: str
     email: str
+    phone_number: str
     role: RoleResponse
     is_active: bool
 
