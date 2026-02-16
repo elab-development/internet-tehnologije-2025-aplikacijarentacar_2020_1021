@@ -22,22 +22,22 @@ def get_vehicles(db: Session = Depends(get_db)):
 def get_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
     vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
     if not vehicle:
-        raise HTTPException(status_code=404, detail=f"There is no vehicle with id: {id}")
+        raise HTTPException(status_code=404, detail=f"There is no vehicle with id: {vehicle_id}")
     return vehicle
 
 
-@router.delete("/vehicles/{id}")
+@router.delete("/vehicles/{vehicle_id}")
 def delete_vehicle(
-    id: int,
+    vehicle_id: int,
     db: Session = Depends(get_db),
     admin: User = Depends(require_role("admin"))
 ):
-    vehicle = db.query(Vehicle).filter(Vehicle.id == id).first()
+    vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
     if not vehicle:
-        raise HTTPException(status_code=404, detail=f"Vehicle with id: {id} not found")
+        raise HTTPException(status_code=404, detail=f"Vehicle with id: {vehicle_id} not found")
     db.delete(vehicle)
     db.commit()
-    return {"message": "Vehicle with id: {id} deleted".format(id=id)}
+    return {"message": f"Vehicle with id: {vehicle_id} deleted"}
 
 
 @router.put("/vehicles/{id}/status")
