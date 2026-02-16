@@ -104,7 +104,7 @@ export function HomePage() {
                 </CardContent>
                 <CardFooter>
                   {isAuthenticated && (
-                    <Link to={`/vehicles?reserve=${vehicle.id}`}>
+                    <Link to={`/vehicles?reserve=${vehicle.id}&from=home`}>
                       <Button variant="secondary">Rezerviši</Button>
                     </Link>
                   )}

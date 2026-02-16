@@ -10,6 +10,8 @@ import { ReservationsPage } from './pages/ReservationsPage'
 import { ReviewsPage } from './pages/ReviewsPage'
 import { AdminUsersPage } from './pages/AdminUsersPage'
 import { AdminDashboardPage } from './pages/AdminDashboardPage'
+import { PaymentSuccessPage } from './pages/PaymentSuccessPage'
+import { PaymentCancelledPage } from './pages/PaymentCancelledPage'
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
           <Route path="reviews" element={<ReviewsPage />} />
           <Route path="admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
           <Route path="admin/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
+          <Route path="payment-success" element={<ProtectedRoute><PaymentSuccessPage /></ProtectedRoute>} />
+          <Route path="payment-cancelled" element={<ProtectedRoute><PaymentCancelledPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
