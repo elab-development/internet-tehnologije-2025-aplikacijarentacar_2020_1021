@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from schema.reservations import ReservationListResponse, SingleReservationResponse, ReservationCreate, ReservationStatusUpdate
 from service.payment_service import PaymentService
+from service.notification_service import NotificationService
 
 router = APIRouter(prefix="/reservations", tags=["Reservations management"])
 
@@ -38,13 +39,20 @@ def verify_payment(
     try:
         int_res_id = int(res_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"ID '{res_id}' nije broj!")
+        raise HTTPException(status_code=400, detail=f"ID '{res_id}' is not a number!")
     if session and session.payment_status == "paid":
         reservation = db.query(Reservation).filter(Reservation.id == int_res_id).first()
         if reservation:
             reservation.status = "payment_processed"
             reservation.updated_at = datetime.now()
             db.commit()
+            msg = (
+                f"*We have a new payment:*\n"
+                f"*Vehicle:* {reservation.vehicle.brand} {reservation.vehicle.model}\n"
+                f"*Amount:* {reservation.price} EUR\n"
+                f"*Reservation ID:* {reservation.id}"
+            )
+            NotificationService.send_telegram_message(msg)
             return {"status": "success", "message": f"Payment for reservation with id: {int_res_id} has been successfully verified"}
 
     raise HTTPException(status_code=400, detail=f"Payment was not successful")
