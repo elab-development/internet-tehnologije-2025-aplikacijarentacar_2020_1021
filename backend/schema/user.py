@@ -40,3 +40,11 @@ class Token(BaseModel):
     access_token: str
 
 
+class UserResponseAdminPanel(BaseModel):
+    id: int
+    full_name: str
+    email: str
+    role: RoleResponse
+    is_active: bool
+
+
