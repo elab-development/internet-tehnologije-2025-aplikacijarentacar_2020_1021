@@ -96,3 +96,37 @@ export interface ReservationListResponse {
 }
 
 export type ReservationStatus = 'confirmed' | 'cancelled' | 'completed' | 'payment_processed'
+
+export interface UserAdminPanel {
+  id: number
+  full_name: string
+  email: string
+  phone_number: string
+  role: RoleResponse
+  is_active: boolean
+}
+
+export type StatsTimeframe = 'today' | 'last_7_days' | 'last_30_days' | 'all_time'
+
+export interface StatsCounters {
+  reservations: { all_time: number; last_30_days: number; last_7_days: number; today: number }
+  users: { all_time: number; last_30_days: number; last_7_days: number; today: number }
+  revenue: {
+    total_all_time: number
+    last_30_days: number
+    last_7_days: number
+    today: number
+  }
+  total_vehicles: number
+}
+
+export interface AdminStatsResponse {
+  status: string
+  data: {
+    counters: StatsCounters
+    charts: {
+      revenue_history: Array<{ month: string; revenue: number }>
+      top_vehicles: Array<{ name: string; rentals: number }>
+    }
+  }
+}
