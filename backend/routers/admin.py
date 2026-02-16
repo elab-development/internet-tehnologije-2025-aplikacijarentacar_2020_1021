@@ -59,7 +59,7 @@ def get_admin_stats(
 
     """Help function to get sum of revenue for reservations within timeframe"""
     def sum_revenue(start_limit=None):
-        query = db.query(func.sum(Reservation.price)).filter(Reservation.status == 'completed')
+        query = db.query(func.sum(Reservation.price)).filter(Reservation.status != 'cancelled')
         if start_limit:
             query = query.filter(Reservation.created_at >= start_limit)
 
@@ -92,7 +92,7 @@ def get_admin_stats(
     revenue_by_month = db.query(
         func.to_char(Reservation.start_date, 'YYYY-MM').label('month'),
         func.sum(Reservation.price).label('revenue')
-    ).filter(Reservation.status == 'completed').group_by('month').all()
+    ).filter(Reservation.status != 'cancelled').group_by('month').all()
 
     """Get top 5 popular vehicles"""
     popular_vehicles = db.query(
@@ -124,6 +124,6 @@ def toggle_vehicle_availability(
     if not vehicle:
         raise HTTPException(status_code=404, detail=f"Vehicle with id: {vehicle_id} is not found")
 
-    vehicle.is_available = is_available
+    vehicle.available = is_available
     db.commit()
     return {"status": "ok", "message": f"Status of a vehicle with id: {vehicle_id} has been successfully updated"}
