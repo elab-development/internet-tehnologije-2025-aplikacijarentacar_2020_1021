@@ -33,6 +33,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         email=user_data.email,
         password_hash=get_password_hash(user_data.password),
         full_name=user_data.full_name,
+        phone_number=user_data.phone_number,
         role_id=customer_role.id
     )
 

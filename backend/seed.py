@@ -27,6 +27,7 @@ def seed_data():
                 full_name="Admin",
                 email="admin@admin.com",
                 password_hash=get_password_hash("admin123"),
+                phone_number="+5555555555",
                 role_id=admin_role.id,
                 is_active=True
             )
@@ -38,6 +39,7 @@ def seed_data():
                 full_name="Manager",
                 email="manager@manager.com",
                 password_hash=get_password_hash("manager123"),
+                phone_number="+5555555555",
                 role_id=manager_role.id,
                 is_active=True
             )

@@ -16,6 +16,7 @@ class UserInReservation(BaseModel):
     id: int
     full_name: str
     email: str
+    phone_number: str
 
     class Config:
         from_attributes = True

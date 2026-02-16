@@ -26,7 +26,7 @@ def get_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
     return vehicle
 
 
-@router.delete("/vehicles/{vehicle_id}")
+@router.delete("/{vehicle_id}")
 def delete_vehicle(
     vehicle_id: int,
     db: Session = Depends(get_db),
@@ -40,7 +40,7 @@ def delete_vehicle(
     return {"message": f"Vehicle with id: {vehicle_id} deleted"}
 
 
-@router.put("/vehicles/{id}/status")
+@router.put("/{id}/status")
 def update_status(
     id: int,
     new_status: bool,
