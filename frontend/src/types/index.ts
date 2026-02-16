@@ -52,3 +52,47 @@ export interface UserResponse {
   is_active: boolean
   created_at: string
 }
+
+export interface VehicleCreatePayload {
+  brand: string
+  model: string
+  price_per_day: number
+  available: boolean
+}
+
+export interface ReservationCreatePayload {
+  vehicle_id: number
+  start_date: string
+  end_date: string
+}
+
+export interface UserInReservation {
+  id: number
+  full_name: string
+  email: string
+  phone_number: string
+}
+
+export interface VehicleInReservation {
+  id: number
+  brand: string
+  model: string
+  price_per_day: number
+}
+
+export interface ReservationResponse {
+  id: number
+  start_date: string
+  end_date: string
+  price: number
+  status: string
+  user: UserInReservation
+  vehicle: VehicleInReservation
+}
+
+export interface ReservationListResponse {
+  status: string
+  data: ReservationResponse[]
+}
+
+export type ReservationStatus = 'confirmed' | 'cancelled' | 'completed' | 'payment_processed'
