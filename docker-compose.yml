@@ -21,6 +21,8 @@ services:
       - ./backend:/app
     environment:
       DATABASE_URL: postgresql://user:password@db:5432/car_rental
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      FRONTEND_URL: ${FRONTEND_URL}
     depends_on:
       - db
 

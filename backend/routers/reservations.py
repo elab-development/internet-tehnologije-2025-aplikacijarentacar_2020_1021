@@ -6,6 +6,7 @@ from sqlalchemy import exists
 from sqlalchemy.orm import Session
 from database import get_db
 from schema.reservations import ReservationListResponse, SingleReservationResponse, ReservationCreate, ReservationStatusUpdate
+from service.payment_service import PaymentService
 
 router = APIRouter(prefix="/reservations", tags=["Reservations management"])
 
@@ -22,6 +23,31 @@ def get_all_reservations(db: Session = Depends(get_db), current_user: User = Dep
         "status": "ok",
         "data": reservations
     }
+
+
+@router.get("/verify")
+def verify_payment(
+        session_id: str,
+        res_id: str,
+        db: Session = Depends(get_db)
+):
+    """Endpoint to verify if payment was successful.
+       If so, it updates reservation status to payment_processed
+    """
+    session = PaymentService.verify_stripe_session(session_id)
+    try:
+        int_res_id = int(res_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"ID '{res_id}' nije broj!")
+    if session and session.payment_status == "paid":
+        reservation = db.query(Reservation).filter(Reservation.id == int_res_id).first()
+        if reservation:
+            reservation.status = "payment_processed"
+            reservation.updated_at = datetime.now()
+            db.commit()
+            return {"status": "success", "message": f"Payment for reservation with id: {int_res_id} has been successfully verified"}
+
+    raise HTTPException(status_code=400, detail=f"Payment was not successful")
 
 
 @router.get("/{reservation_id}", response_model=SingleReservationResponse)
@@ -183,6 +209,29 @@ def delete_reservation(
         "status": "success",
         "message": f"Successfully deleted reservation with id: {reservation_id}"
     }
+
+
+@router.post("/{reservation_id}/pay")
+def pay_for_reservation(
+    reservation_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("customer", "admin"))
+):
+
+    reservation = db.query(Reservation).filter(Reservation.id == reservation_id, Reservation.user_id == current_user.id).first()
+    if not reservation:
+        raise HTTPException(status_code=404, detail=f"Reservation with id: {reservation_id} is not found")
+
+    checkout_url = PaymentService.create_checkout_session(
+        reservation_id=reservation.id,
+        amount=reservation.price,
+        vehicle=f"{reservation.vehicle.brand} {reservation.vehicle.model}"
+    )
+
+    if not checkout_url:
+        raise HTTPException(status_code=500, detail="We have faced an error while creating a Stripe session")
+
+    return {"checkout_url": checkout_url}
 
 
 def check_reservation_overlap(vehicle_id: int, start_date: datetime, end_date: datetime, db: Session,
