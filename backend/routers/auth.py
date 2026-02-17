@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 from database import get_db
 from schema.user import UserCreate, UserLogin, UserResponse, Token
@@ -6,11 +8,17 @@ from models import User, Role
 from utils.auth import verify_password, get_password_hash, create_access_token
 from datetime import timedelta
 from service.user_service import link_guest_reservations
+from main import limiter
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+def get_limiter(request: Request):
+    return request.app.state.limiter
+
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
     """New user registration"""
 
@@ -48,6 +56,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
+@limiter.limit("10/minute")
 def login(credentials: UserLogin, db: Session = Depends(get_db)):
     """user login"""
 
