@@ -47,6 +47,6 @@ class ReviewResponseList(BaseModel):
 
 
 class ReviewCreate(BaseModel):
-    vehicle_id: int
+    reservation_id: int
     rating: int
     comment: str

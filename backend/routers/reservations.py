@@ -12,7 +12,7 @@ from service.notification_service import NotificationService
 router = APIRouter(prefix="/reservations", tags=["Reservations management"])
 
 
-@router.get("", response_model=ReservationListResponse)
+@router.get("", response_model=ReservationListResponse, response_model_exclude_none=True)
 def get_all_reservations(db: Session = Depends(get_db), current_user: User = Depends(require_role("admin", "manager", "customer"))):
 
     if current_user.role.name in ("admin", "manager"):
@@ -86,6 +86,17 @@ def create_reservation(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("admin", "manager", "customer"))
 ):
+    if current_user.role.name in ["admin", "manager"]:
+        email = payload.customer_email if payload.customer_email else current_user.email
+    else:
+        email = current_user.email
+    """
+    Checks if user with prompted email exists. If not, saves None as user id and we will connect it later
+    """
+    existing_user = db.query(User).filter(User.email == email).first()
+    user_id = existing_user.id if existing_user else None
+    email = None if existing_user else email
+    non_existing_user = False if existing_user else True
 
     vehicle = db.query(Vehicle).filter(Vehicle.id == payload.vehicle_id).first()
 
@@ -104,13 +115,17 @@ def create_reservation(
     total_price = total_days * vehicle.price_per_day
 
     new_res = Reservation(
-        user_id=current_user.id,
+        user_id=user_id,
         vehicle_id=payload.vehicle_id,
         start_date=payload.start_date,
         end_date=payload.end_date,
         price=total_price,
         status="confirmed",
-        total_days=total_days
+        total_days=total_days,
+        non_existing_user=non_existing_user,
+        email=email,
+        phone_number=payload.customer_number,
+        full_name=payload.customer_full_name
     )
 
     db.add(new_res)

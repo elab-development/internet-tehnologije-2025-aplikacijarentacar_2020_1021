@@ -12,23 +12,39 @@ router = APIRouter(prefix="/reviews", tags=["Reviews management"])
 def create_review(
     payload: ReviewCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("admin"))
+    current_user: User = Depends(require_role("customer"))
 ):
-    has_reservation = db.query(Reservation).filter(
-        Reservation.user_id == current_user.id,
-        Reservation.vehicle_id == payload.vehicle_id,
-        Reservation.status == "completed"
+    reservation = db.query(Reservation).filter(
+        Reservation.id == payload.reservation_id,
+        Reservation.user_id == current_user.id
     ).first()
 
-    if not has_reservation:
+    if not reservation:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Reservation with id {payload.reservation_id} not found"
+        )
+
+    if reservation.status != "completed":
         raise HTTPException(
             status_code=403,
-            detail=f"You can only review vehicles you had the reservation for"
+            detail="You can only review completed reservations"
+        )
+
+    existing_review = db.query(Review).filter(
+        Review.reservation_id == payload.reservation_id
+    ).first()
+
+    if existing_review:
+        raise HTTPException(
+            status_code=400,
+            detail="Review already exists for this reservation"
         )
 
     new_review = Review(
         user_id=current_user.id,
-        vehicle_id=payload.vehicle_id,
+        vehicle_id=reservation.vehicle_id,
+        reservation_id=payload.reservation_id,
         rating=payload.rating,
         comment=payload.comment
     )
@@ -39,6 +55,17 @@ def create_review(
     return {
         "status": "Review successfully created",
         "data": new_review
+    }
+
+
+@router.get("", response_model=ReviewResponseList)
+def get_all_reviews(
+    db: Session = Depends(get_db),
+):
+    reviews = db.query(Review).all()
+    return {
+        "status": "ok",
+        "data": reviews
     }
 
 

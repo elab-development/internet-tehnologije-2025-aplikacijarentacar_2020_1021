@@ -1,6 +1,6 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, EmailStr
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 from enum import Enum
 
@@ -38,8 +38,12 @@ class ReservationResponse(BaseModel):
     end_date: datetime
     price: float
     status: str
-    user: UserInReservation
+    user: Optional[UserInReservation] = None
     vehicle: VehicleInReservation
+    non_existing_user: bool
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -69,6 +73,9 @@ class ReservationCreate(BaseModel):
     vehicle_id: int
     start_date: datetime
     end_date: datetime
+    customer_email: Optional[EmailStr] = None
+    customer_full_name: Optional[str] = None
+    customer_number: Optional[str] = None
 
     """
     @:param
