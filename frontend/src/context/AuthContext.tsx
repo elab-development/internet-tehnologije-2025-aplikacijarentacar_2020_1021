@@ -9,6 +9,7 @@ interface AuthContextValue {
   user: AuthUser | null
   isAuthenticated: boolean
   isAdmin: boolean
+  isManager: boolean
   login: (email: string, password: string) => Promise<void>
   register: (data: { full_name: string; email: string; phone_number: string; password: string }) => Promise<void>
   logout: () => void
@@ -65,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       isAuthenticated: !!token && !!user,
       isAdmin: user?.role === 'admin',
+      isManager: user?.role === 'manager',
       login,
       register,
       logout,

@@ -7,6 +7,7 @@ import type {
   VehicleListResponse,
   VehicleCreatePayload,
   ReservationCreatePayload,
+  ReviewListResponse,
 } from '../types'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -20,6 +21,8 @@ export function VehiclesPage() {
   const reserveVehicleId = searchParams.get('reserve')
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [reviewsByVehicle, setReviewsByVehicle] = useState<Record<number, ReviewListResponse['data']>>({})
+  const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -32,6 +35,14 @@ export function VehiclesPage() {
       const res = await api<VehicleListResponse>('/vehicles')
       setVehicles(res.data ?? [])
       setError('')
+      for (const v of res.data ?? []) {
+        try {
+          const rev = await api<ReviewListResponse>(`/reviews/vehicle/${v.id}`)
+          setReviewsByVehicle((prev) => ({ ...prev, [v.id]: rev.data ?? [] }))
+        } catch {
+          setReviewsByVehicle((prev) => ({ ...prev, [v.id]: [] }))
+        }
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Greška u učitavanju.')
     } finally {
@@ -60,13 +71,29 @@ export function VehiclesPage() {
     setReserveModalOpen(true)
   }
 
+  const filteredVehicles = vehicles.filter(
+    (v) =>
+      v.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.price_per_day.toString().includes(searchQuery)
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-slate-800">Vozila</h1>
-        {isAdmin && (
-          <Button onClick={() => setAddModalOpen(true)}>Dodaj vozilo</Button>
-        )}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Input
+            type="text"
+            placeholder="Pretraži vozila..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-xs"
+          />
+          {isAdmin && (
+            <Button onClick={() => setAddModalOpen(true)}>Dodaj vozilo</Button>
+          )}
+        </div>
       </div>
 
       {error && <p className="text-red-600">{error}</p>}
@@ -75,14 +102,17 @@ export function VehiclesPage() {
           <span className="inline-block w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
           Učitavanje...
         </div>
-      ) : vehicles.length === 0 ? (
-        <p className="text-slate-600">Nema vozila.</p>
+      ) : filteredVehicles.length === 0 ? (
+        <p className="text-slate-600">
+          {searchQuery ? 'Nema rezultata za pretragu.' : 'Nema vozila.'}
+        </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {vehicles.map((vehicle) => (
+          {filteredVehicles.map((vehicle) => (
             <VehicleCard
               key={vehicle.id}
               vehicle={vehicle}
+              reviews={reviewsByVehicle[vehicle.id] ?? []}
               isAdmin={isAdmin}
               isAuthenticated={isAuthenticated}
               onReserve={() => openReserveModal(vehicle)}
@@ -124,12 +154,14 @@ export function VehiclesPage() {
 
 function VehicleCard({
   vehicle,
+  reviews,
   isAdmin,
   isAuthenticated,
   onReserve,
   onDelete,
 }: {
   vehicle: Vehicle
+  reviews: ReviewListResponse['data']
   isAdmin: boolean
   isAuthenticated: boolean
   onReserve: () => void
@@ -172,13 +204,28 @@ function VehicleCard({
             vehicle.available ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-600'
           }`}
         >
-          {vehicle.available ? 'Dostupno' : 'Zauzeto'}
+          {vehicle.available ? 'Dostupno' : 'Trenutno nedostupno'}
         </span>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-2">
         <p className="text-slate-600 text-sm">
           <span className="font-medium text-slate-800">{vehicle.price_per_day} €</span> / dan
         </p>
+        <div className="text-sm">
+          <p className="font-medium text-slate-700 mb-1">Recenzije:</p>
+          {reviews.length === 0 ? (
+            <p className="text-slate-500 text-xs">Nema recenzija.</p>
+          ) : (
+            <ul className="space-y-1 max-h-24 overflow-y-auto">
+              {reviews.map((r) => (
+                <li key={r.id} className="text-slate-600 text-xs">
+                  <span className="font-medium">{r.rating}/5</span> – {r.comment}
+                  <span className="text-slate-400 text-xs"> ({r.user.full_name})</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </CardContent>
       <CardFooter className="flex flex-wrap gap-2">
         {isAuthenticated && (
@@ -198,7 +245,7 @@ function VehicleCard({
               onClick={handleToggleStatus}
               disabled={toggling}
             >
-              {vehicle.available ? 'Označi zauzeto' : 'Označi dostupno'}
+              {vehicle.available ? 'Označi kao nedostupno' : 'Označi dostupno'}
             </Button>
             <Button
               variant="danger"
@@ -327,8 +374,14 @@ function ReserveModal({
   vehicle: Vehicle | null
   onSuccess: () => void
 }) {
+  const { isAdmin, isManager } = useAuth()
+  const canCreateForNonExistingUser = isAdmin || isManager
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [isForSelf, setIsForSelf] = useState(false)
+  const [customerEmail, setCustomerEmail] = useState('')
+  const [customerFullName, setCustomerFullName] = useState('')
+  const [customerPhoneNumber, setCustomerPhoneNumber] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState(false)
@@ -346,19 +399,35 @@ function ReserveModal({
       setError('Datum završetka mora biti posle datuma početka.')
       return
     }
+    if (!isForSelf && canCreateForNonExistingUser) {
+      if (!customerEmail || !customerFullName || !customerPhoneNumber) {
+        setError('Sva polja za korisnika su obavezna.')
+        return
+      }
+    }
     setSubmitting(true)
     try {
+      const payload: ReservationCreatePayload = {
+        vehicle_id: vehicle.id,
+        start_date: start.toISOString(),
+        end_date: end.toISOString(),
+      }
+      if (!isForSelf && canCreateForNonExistingUser) {
+        payload.customer_email = customerEmail
+        payload.customer_full_name = customerFullName
+        payload.customer_number = customerPhoneNumber
+      }
       await api('/reservations', {
         method: 'POST',
-        json: {
-          vehicle_id: vehicle.id,
-          start_date: start.toISOString(),
-          end_date: end.toISOString(),
-        } as ReservationCreatePayload,
+        json: payload,
       })
       setSuccessMessage(true)
       setStartDate('')
       setEndDate('')
+      setIsForSelf(false)
+      setCustomerEmail('')
+      setCustomerFullName('')
+      setCustomerPhoneNumber('')
       setTimeout(() => {
         onSuccess()
         setSuccessMessage(false)
@@ -411,6 +480,49 @@ function ReserveModal({
               onChange={(e) => setEndDate(e.target.value)}
               required
             />
+            {canCreateForNonExistingUser && (
+              <>
+                <Input
+                  label="Ime i prezime korisnika"
+                  type="text"
+                  value={customerFullName}
+                  onChange={(e) => setCustomerFullName(e.target.value)}
+                  placeholder="Marko Marković"
+                  required={!isForSelf}
+                  disabled={isForSelf}
+                />
+                <Input
+                  label="Email korisnika"
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="ime@domen.com"
+                  required={!isForSelf}
+                  disabled={isForSelf}
+                />
+                <Input
+                  label="Broj telefona korisnika"
+                  type="tel"
+                  value={customerPhoneNumber}
+                  onChange={(e) => setCustomerPhoneNumber(e.target.value)}
+                  placeholder="+381 6X XXX XXXX"
+                  required={!isForSelf}
+                  disabled={isForSelf}
+                />
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
+                  <input
+                    type="checkbox"
+                    id="for-self"
+                    checked={isForSelf}
+                    onChange={(e) => setIsForSelf(e.target.checked)}
+                    className="rounded border-slate-300"
+                  />
+                  <label htmlFor="for-self" className="text-sm text-slate-700">
+                    Rezerviši za sebe
+                  </label>
+                </div>
+              </>
+            )}
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="secondary" onClick={onClose}>
                 Odustani

@@ -5,6 +5,7 @@ from schema.user import UserCreate, UserLogin, UserResponse, Token
 from models import User, Role
 from utils.auth import verify_password, get_password_hash, create_access_token
 from datetime import timedelta
+from service.user_service import link_guest_reservations
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -40,6 +41,8 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    link_guest_reservations(db, user_data.email, new_user.id)
 
     return new_user
 

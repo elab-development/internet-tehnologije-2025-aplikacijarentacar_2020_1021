@@ -64,6 +64,9 @@ export interface ReservationCreatePayload {
   vehicle_id: number
   start_date: string
   end_date: string
+  customer_email?: string
+  customer_full_name?: string
+  customer_number?: string
 }
 
 export interface UserInReservation {
@@ -86,8 +89,12 @@ export interface ReservationResponse {
   end_date: string
   price: number
   status: string
-  user: UserInReservation
+  user: UserInReservation | null
   vehicle: VehicleInReservation
+  non_existing_user: boolean
+  email?: string | null
+  full_name?: string | null
+  phone_number?: string | null
 }
 
 export interface ReservationListResponse {
@@ -129,4 +136,10 @@ export interface AdminStatsResponse {
       top_vehicles: Array<{ name: string; rentals: number }>
     }
   }
+}
+
+export interface ReviewCreatePayload {
+  reservation_id: number
+  rating: number
+  comment: string
 }

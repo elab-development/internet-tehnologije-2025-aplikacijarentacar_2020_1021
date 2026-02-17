@@ -52,6 +52,10 @@ class Reservation(Base):
     total_days = Column(Integer)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    non_existing_user = Column(Boolean, default=False)
+    email = Column(String, nullable=True)
+    phone_number = Column(String, nullable=True)
+    full_name = Column(String, nullable=True)
     user = relationship("User", back_populates="reservations")
     vehicle = relationship("Vehicle", back_populates="reservations")
 
@@ -72,6 +76,7 @@ class Review(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     vehicle_id = Column(Integer, ForeignKey("vehicles.id"))
+    reservation_id = Column(Integer, ForeignKey("reservations.id"), nullable=True)
     rating = Column(Integer)
     comment = Column(String(500))
 

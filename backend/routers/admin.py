@@ -90,7 +90,7 @@ def get_admin_stats(
 
     """Get revenue by month"""
     revenue_by_month = db.query(
-        func.to_char(Reservation.start_date, 'YYYY-MM').label('month'),
+        func.to_char(Reservation.created_at, 'YYYY-MM').label('month'),
         func.sum(Reservation.price).label('revenue')
     ).filter(Reservation.status != 'cancelled').group_by('month').all()
 

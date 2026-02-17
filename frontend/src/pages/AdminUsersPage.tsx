@@ -3,9 +3,11 @@ import { api } from '../lib/api'
 import type { UserAdminPanel } from '../types'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
 
 export function AdminUsersPage() {
   const [users, setUsers] = useState<UserAdminPanel[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -35,21 +37,42 @@ export function AdminUsersPage() {
     }
   }
 
+  const filteredUsers = users.filter(
+    (u) =>
+      u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.phone_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.role.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-800">Korisnici</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold text-slate-800">Korisnici</h1>
+        <Input
+          type="text"
+          placeholder="Pretraži korisnike..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="max-w-xs"
+        />
+      </div>
       {error && <p className="text-red-600">{error}</p>}
       {loading ? (
         <div className="flex items-center gap-2 text-slate-600">
           <span className="inline-block w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
           Učitavanje...
         </div>
-      ) : users.length === 0 ? (
-        <p className="text-slate-600">Nema korisnika.</p>
+      ) : filteredUsers.length === 0 ? (
+        <p className="text-slate-600">
+          {searchQuery ? 'Nema rezultata za pretragu.' : 'Nema korisnika.'}
+        </p>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Lista korisnika</CardTitle>
+            <CardTitle className="text-base">
+              Lista korisnika {searchQuery && `(${filteredUsers.length})`}
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -65,7 +88,7 @@ export function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {users.map((u) => (
+                  {filteredUsers.map((u) => (
                     <tr key={u.id} className="hover:bg-slate-50/50">
                       <td className="px-4 py-3 text-slate-800">{u.full_name}</td>
                       <td className="px-4 py-3 text-slate-600">{u.email}</td>
