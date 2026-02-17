@@ -22,6 +22,7 @@ export function VehiclesPage() {
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [reviewsByVehicle, setReviewsByVehicle] = useState<Record<number, ReviewListResponse['data']>>({})
+  const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -70,13 +71,29 @@ export function VehiclesPage() {
     setReserveModalOpen(true)
   }
 
+  const filteredVehicles = vehicles.filter(
+    (v) =>
+      v.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.price_per_day.toString().includes(searchQuery)
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-slate-800">Vozila</h1>
-        {isAdmin && (
-          <Button onClick={() => setAddModalOpen(true)}>Dodaj vozilo</Button>
-        )}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Input
+            type="text"
+            placeholder="Pretraži vozila..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-xs"
+          />
+          {isAdmin && (
+            <Button onClick={() => setAddModalOpen(true)}>Dodaj vozilo</Button>
+          )}
+        </div>
       </div>
 
       {error && <p className="text-red-600">{error}</p>}
@@ -85,11 +102,13 @@ export function VehiclesPage() {
           <span className="inline-block w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
           Učitavanje...
         </div>
-      ) : vehicles.length === 0 ? (
-        <p className="text-slate-600">Nema vozila.</p>
+      ) : filteredVehicles.length === 0 ? (
+        <p className="text-slate-600">
+          {searchQuery ? 'Nema rezultata za pretragu.' : 'Nema vozila.'}
+        </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {vehicles.map((vehicle) => (
+          {filteredVehicles.map((vehicle) => (
             <VehicleCard
               key={vehicle.id}
               vehicle={vehicle}
@@ -359,7 +378,7 @@ function ReserveModal({
   const canCreateForNonExistingUser = isAdmin || isManager
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-  const [isNonExistingUser, setIsNonExistingUser] = useState(false)
+  const [isForSelf, setIsForSelf] = useState(false)
   const [customerEmail, setCustomerEmail] = useState('')
   const [customerFullName, setCustomerFullName] = useState('')
   const [customerPhoneNumber, setCustomerPhoneNumber] = useState('')
@@ -380,9 +399,9 @@ function ReserveModal({
       setError('Datum završetka mora biti posle datuma početka.')
       return
     }
-    if (isNonExistingUser && canCreateForNonExistingUser) {
+    if (!isForSelf && canCreateForNonExistingUser) {
       if (!customerEmail || !customerFullName || !customerPhoneNumber) {
-        setError('Sva polja za korisnika su obavezna kada je označeno "Korisnik nema nalog".')
+        setError('Sva polja za korisnika su obavezna.')
         return
       }
     }
@@ -393,7 +412,7 @@ function ReserveModal({
         start_date: start.toISOString(),
         end_date: end.toISOString(),
       }
-      if (isNonExistingUser && canCreateForNonExistingUser) {
+      if (!isForSelf && canCreateForNonExistingUser) {
         payload.customer_email = customerEmail
         payload.customer_full_name = customerFullName
         payload.customer_number = customerPhoneNumber
@@ -405,7 +424,7 @@ function ReserveModal({
       setSuccessMessage(true)
       setStartDate('')
       setEndDate('')
-      setIsNonExistingUser(false)
+      setIsForSelf(false)
       setCustomerEmail('')
       setCustomerFullName('')
       setCustomerPhoneNumber('')
@@ -462,20 +481,6 @@ function ReserveModal({
               required
             />
             {canCreateForNonExistingUser && (
-              <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
-                <input
-                  type="checkbox"
-                  id="non-existing-user"
-                  checked={isNonExistingUser}
-                  onChange={(e) => setIsNonExistingUser(e.target.checked)}
-                  className="rounded border-slate-300"
-                />
-                <label htmlFor="non-existing-user" className="text-sm text-slate-700">
-                  Korisnik nema nalog
-                </label>
-              </div>
-            )}
-            {isNonExistingUser && canCreateForNonExistingUser && (
               <>
                 <Input
                   label="Ime i prezime korisnika"
@@ -483,7 +488,8 @@ function ReserveModal({
                   value={customerFullName}
                   onChange={(e) => setCustomerFullName(e.target.value)}
                   placeholder="Marko Marković"
-                  required={isNonExistingUser}
+                  required={!isForSelf}
+                  disabled={isForSelf}
                 />
                 <Input
                   label="Email korisnika"
@@ -491,7 +497,8 @@ function ReserveModal({
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="ime@domen.com"
-                  required={isNonExistingUser}
+                  required={!isForSelf}
+                  disabled={isForSelf}
                 />
                 <Input
                   label="Broj telefona korisnika"
@@ -499,8 +506,21 @@ function ReserveModal({
                   value={customerPhoneNumber}
                   onChange={(e) => setCustomerPhoneNumber(e.target.value)}
                   placeholder="+381 6X XXX XXXX"
-                  required={isNonExistingUser}
+                  required={!isForSelf}
+                  disabled={isForSelf}
                 />
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
+                  <input
+                    type="checkbox"
+                    id="for-self"
+                    checked={isForSelf}
+                    onChange={(e) => setIsForSelf(e.target.checked)}
+                    className="rounded border-slate-300"
+                  />
+                  <label htmlFor="for-self" className="text-sm text-slate-700">
+                    Rezerviši za sebe
+                  </label>
+                </div>
               </>
             )}
             <div className="flex gap-2 pt-2">

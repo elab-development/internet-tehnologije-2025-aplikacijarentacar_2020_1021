@@ -31,6 +31,7 @@ function formatDate(iso: string) {
 export function ReservationsPage() {
   const { isAdmin } = useAuth()
   const [reservations, setReservations] = useState<ReservationResponse[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -50,9 +51,37 @@ export function ReservationsPage() {
     fetchReservations()
   }, [fetchReservations])
 
+  const filteredReservations = reservations.filter((res) => {
+    const query = searchQuery.toLowerCase()
+    const vehicleMatch =
+      res.vehicle.brand.toLowerCase().includes(query) ||
+      res.vehicle.model.toLowerCase().includes(query)
+    const userMatch = res.non_existing_user
+      ? (res.full_name?.toLowerCase().includes(query) ||
+          res.email?.toLowerCase().includes(query) ||
+          res.phone_number?.toLowerCase().includes(query))
+      : res.user
+        ? (res.user.full_name.toLowerCase().includes(query) ||
+            res.user.email.toLowerCase().includes(query) ||
+            res.user.phone_number.toLowerCase().includes(query))
+        : false
+    const statusMatch = STATUS_LABELS[res.status]?.toLowerCase().includes(query) || false
+    const priceMatch = res.price.toString().includes(query)
+    return vehicleMatch || userMatch || statusMatch || priceMatch
+  })
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-800">Rezervacije</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold text-slate-800">Rezervacije</h1>
+        <Input
+          type="text"
+          placeholder="Pretraži rezervacije..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="max-w-xs"
+        />
+      </div>
 
       {error && <p className="text-red-600">{error}</p>}
       {loading ? (
@@ -60,11 +89,13 @@ export function ReservationsPage() {
           <span className="inline-block w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
           Učitavanje...
         </div>
-      ) : reservations.length === 0 ? (
-        <p className="text-slate-600">Nema rezervacija.</p>
+      ) : filteredReservations.length === 0 ? (
+        <p className="text-slate-600">
+          {searchQuery ? 'Nema rezultata za pretragu.' : 'Nema rezervacija.'}
+        </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {reservations.map((res) => (
+          {filteredReservations.map((res) => (
             <ReservationCard
               key={res.id}
               reservation={res}
