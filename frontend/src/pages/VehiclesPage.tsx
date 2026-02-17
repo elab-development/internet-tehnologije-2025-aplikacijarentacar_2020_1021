@@ -172,7 +172,7 @@ function VehicleCard({
             vehicle.available ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-600'
           }`}
         >
-          {vehicle.available ? 'Dostupno' : 'Zauzeto'}
+          {vehicle.available ? 'Dostupno' : 'Trenutno nedostupno'}
         </span>
       </CardHeader>
       <CardContent>
@@ -198,7 +198,7 @@ function VehicleCard({
               onClick={handleToggleStatus}
               disabled={toggling}
             >
-              {vehicle.available ? 'Označi zauzeto' : 'Označi dostupno'}
+              {vehicle.available ? 'Označi kao nedostupno' : 'Označi dostupno'}
             </Button>
             <Button
               variant="danger"

@@ -79,7 +79,7 @@ export function HomePage() {
                       vehicle.available ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-600'
                     }`}
                   >
-                    {vehicle.available ? 'Dostupno' : 'Zauzeto'}
+                    {vehicle.available ? 'Dostupno' : 'Trenutno nedostupno'}
                   </span>
                 </CardHeader>
                 <CardContent className="space-y-2">
