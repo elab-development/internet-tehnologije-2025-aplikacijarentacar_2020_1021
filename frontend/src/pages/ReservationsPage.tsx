@@ -6,6 +6,7 @@ import type {
   ReservationResponse,
   ReservationStatus,
   ReservationCreatePayload,
+  ReviewCreatePayload,
 } from '../types'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -90,6 +91,7 @@ function ReservationCard({
   const [payLoading, setPayLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
+  const [reviewModalOpen, setReviewModalOpen] = useState(false)
 
   async function handleStatusChange(newStatus: ReservationStatus) {
     setStatusLoading(true)
@@ -133,6 +135,7 @@ function ReservationCard({
 
   const canCancel = reservation.status === 'confirmed'
   const canPay = reservation.status === 'confirmed'
+  const canReview = reservation.status === 'completed' && !isAdmin
 
   return (
     <>
@@ -160,7 +163,11 @@ function ReservationCard({
           <p className="font-medium text-slate-800">{reservation.price} €</p>
           {isAdmin && (
             <p className="text-slate-500">
-              {reservation.user.full_name} · {reservation.user.email}
+              {reservation.non_existing_user
+                ? `${reservation.full_name ?? 'N/A'} · ${reservation.email ?? 'N/A'}`
+                : reservation.user
+                  ? `${reservation.user.full_name} · ${reservation.user.email}`
+                  : 'N/A'}
             </p>
           )}
         </CardContent>
@@ -209,6 +216,14 @@ function ReservationCard({
               Plati
             </Button>
           )}
+          {canReview && (
+            <Button
+              variant="secondary"
+              onClick={() => setReviewModalOpen(true)}
+            >
+              Ostavi recenziju
+            </Button>
+          )}
         </CardFooter>
       </Card>
 
@@ -219,6 +234,17 @@ function ReservationCard({
           reservation={reservation}
           onSuccess={() => {
             setEditModalOpen(false)
+            onUpdate()
+          }}
+        />
+      )}
+      {canReview && (
+        <CreateReviewModal
+          open={reviewModalOpen}
+          onClose={() => setReviewModalOpen(false)}
+          reservation={reservation}
+          onSuccess={() => {
+            setReviewModalOpen(false)
             onUpdate()
           }}
         />
@@ -338,6 +364,102 @@ function EditReservationModal({
           </Button>
           <Button type="submit" isLoading={submitting}>
             Sačuvaj
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+function CreateReviewModal({
+  open,
+  onClose,
+  reservation,
+  onSuccess,
+}: {
+  open: boolean
+  onClose: () => void
+  reservation: ReservationResponse
+  onSuccess: () => void
+}) {
+  const [rating, setRating] = useState(5)
+  const [comment, setComment] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (open) {
+      setRating(5)
+      setComment('')
+      setError('')
+    }
+  }, [open])
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    setSubmitting(true)
+    try {
+      await api('/reviews', {
+        method: 'POST',
+        json: {
+          reservation_id: reservation.id,
+          rating,
+          comment,
+        } as ReviewCreatePayload,
+      })
+      onSuccess()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Greška pri kreiranju recenzije.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title={`Ostavi recenziju: ${reservation.vehicle.brand} ${reservation.vehicle.model}`}>
+      <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
+        )}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Ocena</label>
+          <div className="flex gap-2 items-center">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setRating(star)}
+                className={`text-2xl transition-colors ${
+                  star <= rating ? 'text-amber-400' : 'text-slate-300'
+                } hover:text-amber-400`}
+              >
+                ★
+              </button>
+            ))}
+            <span className="text-sm text-slate-600 ml-2">{rating}/5</span>
+          </div>
+        </div>
+        <div>
+          <label htmlFor="comment" className="block text-sm font-medium text-slate-700 mb-1">
+            Komentar
+          </label>
+          <textarea
+            id="comment"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={4}
+            className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent"
+            placeholder="Napišite svoje iskustvo..."
+            required
+          />
+        </div>
+        <div className="flex gap-2 pt-2">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Odustani
+          </Button>
+          <Button type="submit" isLoading={submitting}>
+            Pošalji recenziju
           </Button>
         </div>
       </form>
