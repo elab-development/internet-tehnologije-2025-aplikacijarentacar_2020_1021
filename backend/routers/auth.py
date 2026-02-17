@@ -8,18 +8,14 @@ from models import User, Role
 from utils.auth import verify_password, get_password_hash, create_access_token
 from datetime import timedelta
 from service.user_service import link_guest_reservations
-from main import limiter
+from limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-def get_limiter(request: Request):
-    return request.app.state.limiter
-
-
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
-def register(user_data: UserCreate, db: Session = Depends(get_db)):
+def register(request: Request, user_data: UserCreate, db: Session = Depends(get_db)):
     """New user registration"""
 
     #Initial check to see if user exists
@@ -57,7 +53,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 @limiter.limit("10/minute")
-def login(credentials: UserLogin, db: Session = Depends(get_db)):
+def login(request: Request, credentials: UserLogin, db: Session = Depends(get_db)):
     """user login"""
 
     user = db.query(User).filter(User.email == credentials.email).first()

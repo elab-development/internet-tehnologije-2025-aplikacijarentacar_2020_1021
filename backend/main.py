@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from limiter import limiter
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
@@ -10,8 +11,6 @@ from routers import auth, vehicle, reservations, review, admin
 from dotenv import load_dotenv
 import os
 
-"""Rate limiter setup"""
-limiter = Limiter(key_func=get_remote_address)
 
 load_dotenv()
 
