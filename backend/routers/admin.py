@@ -14,7 +14,7 @@ router = APIRouter(prefix="/admin", tags=["Admin endpoints"])
 @router.get("/users", response_model=List[UserResponseAdminPanel])
 def get_all_users(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("admin"))
+    current_user: User = Depends(require_role("admin", "manager"))
 ):
     return db.query(User).all()
 
